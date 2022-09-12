@@ -1,0 +1,139 @@
+---
+title: "Homework 2"
+author: "Sam McNelly"
+date: "2022-09-02"
+output: html_document
+---
+
+1. Import class one survey data from our Github site (https://github.com/kijohnson/ADA) (The dataset is called ‘Class 1 Survey Fall 2022.csv’), calling the R dataframe that you create C1survey.
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+#Import data from Dr. Johnson's github, and assign data to dataframe called "C1survey"
+
+C1survey<-read.csv("https://raw.githubusercontent.com/kijohnson/ADA/master/Class%201%20Survey%20Fall%202022.csv")
+
+```
+
+2. Determine: a. the number of observations (i.e. the number of people who filled out the survey) and b. the number of variables in the dataframe.
+
+```{r}
+#use dim to get the number of observations (42) and the number of variables (27). 
+
+#after running this chunk, this can be double checked by looking in the environment
+
+dim(C1survey)
+
+```
+
+3. a. Rename the column variables to something shorter and that is descriptive of what the variable is about (for example like_dogs for the ‘Do you like dogs?’ question variable) and b. Display that they are renamed.
+
+```{r}
+
+#Before renaming any columns, we can first look at what the columns are currently named. 
+colnames(C1survey)
+
+#Then, because I now have a list of the variables in order, I can rename all variables in one chunk of code. 
+
+names(C1survey)[1:27]<-c("ID", "like.cats", "like.dogs", "DI.item", "life.slogan", "fave.day", "morn.night.other", "fave.food", "fave.drink", "fave.season", "fave.month", "hobby", "degree", "specializ.", "stat.soft", "r. exper.", "coding.comfort", "time.coding", "learn.goals", "PH.interest", "fave.number", "birthday", "birth.month", "home.country", "home.state", "home.city", "edu")
+
+#we can check that this worked by using "colnames" again
+
+colnames(C1survey)
+
+#seems to have worked!
+
+```
+
+4. Write code to determine and display the number of factor, integer, numerical, and character variables there are in the C1survey dataset.
+
+
+```{r}
+#to get an overall summary of variable types in this dataset, we can use sapply (could also use "sapply(C1survey,class)")
+
+sapply(C1survey, typeof)
+
+```
+
+5. a. Using code, check the bday and bmonth variables for any unusual or missing values. If you find any, b. describe what you will do with the unusual values in a comment before or immediately following the code that does it, and c. after you have cleaned up any unusual values, find the median bday and month. *Note: please make sure that your bday and month variables are numeric before doing statistics
+
+```{r}
+#First, let's check to see if birthday and birth.month are numeric.
+
+class(C1survey$birthday)
+class(C1survey$birth.month)
+
+#This told us that both variables are currently character, not numeric, so we need to change that. This will overwrite the birthday and birth.month variables. 
+
+C1survey$birthday<-as.numeric(C1survey$birthday)
+C1survey$birth.month<-as.numeric(C1survey$birth.month)
+
+#Let's check the class again to make sure that worked.
+class(C1survey$birthday)
+class(C1survey$birth.month)
+
+#It did work! Now we can look at summary statistics for these variables.
+
+summary(C1survey$birthday)
+summary(C1survey$birth.month)
+
+#The output indicates that each variable (birthday and birth.month) have 3 observations with values of "NA". No other variables seem unusual, as the min for both birthday and birth.month are 1 and the max are 30 and 12, respectively, which are logical responses. If I wanted to remove all rows with any NA values, I could use the code "na.omit(C1survey)". In order to get the median values of each variable without considering the NA observations (just for those variables), we will use the following code:
+
+median(C1survey$birthday, na.rm=TRUE)
+median(C1survey$birth.month, na.rm=TRUE)
+
+#This shows us that the median birthday is the 18th of the month, and the median birth month is July. 
+
+```
+
+6. a. Create a new variable called bseason that gives the season according to Northern Meteorological season in which respondents were born (winter=12/1 to 2/29, spring=3/1 to 5/31, summer=6/1 to 8/31, fall=9/1 to 11/30). b. Using the table function, print a table of Seasons in the columns and bmonths in the rows that allows you to check that the coding is correct c. Sum the columns using the addmargins function to answer the question of how many classmates were born in each season? Include your answer in the code.
+
+```{r}
+#First, we'll create the new variable bseason based on the criteria above.
+#I will have 0=winter, 1=spring, 2=summer, and 3=fall.
+
+
+#It took me forever to figure out how to do this with the ordering of commands because of how things would be overwritten, but it seems to be correct now. Check this carefully against the key though, for a more efficient idea. 
+
+C1survey$bseason<-ifelse(C1survey$birth.month<=2,0,ifelse(C1survey$birth.month==12,0,ifelse(C1survey$birth.month>=9, 3, ifelse(C1survey$birth.month>=6, 2, ifelse(C1survey$birth.month>=3, 1,NA))))) 
+                         
+#Now we will use table to check that this worked correctly, and it seemed to! I also assigned this table to an object so we can sum the columns below. 
+bseason.table<-table(C1survey$birth.month,C1survey$bseason)
+
+#Finally, we will sum the columns of the above table to figure out how many people in our classes were born in each season.
+
+#what I did below works, but it also gives the values for the rows. What would the code be just for columns?
+
+addmargins(bseason.table)
+
+#According to the table produced by the code above, 9 students were born in winter, 7 in spring, 11 in summer, and 10 in fall. 
+
+```
+
+7. Pick your favorite variable to analyze, come up with a question you want to answer with that variable, generate the code, and provide an answer to your question. Describe what you did using comments (i.e. #’s).
+
+```{r}
+#I'm interested in the breakdown of the morning people vs. night owls, or people that aren't really either in our class. To look at this, I'll first check the variable class.
+
+class(C1survey$morn.night.other)
+
+#This is a character variable, so to be able to analyze it, I'll create a new version of the variable that is a factor. 
+
+C1survey$morn.night.other.fac<-as.factor(C1survey$morn.night.other)
+
+#I'll check to make sure that worked:
+
+class(C1survey$morn.night.other.fac) #It did work!
+
+#I just want to know the frequencies of the three possibilities, so I'll use summary stats. 
+
+summary(C1survey$morn.night.other.fac)
+
+#This shows that most people don't think of themselves as either a morning or night person (17), fewer people are morning people (9), and quite a few people are night owls (16).
+
+
+```
+
+That's all for now!
+
